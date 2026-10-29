@@ -10,7 +10,8 @@ app.set('trust proxy', 1); // behind Vercel's proxy: real client IP for rate lim
 app.use(express.json({ limit: '600kb' }));
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
-app.use(express.static(PUBLIC_DIR));
+// dotfiles: 'allow' so /.well-known/assetlinks.json (Android app link) is served
+app.use(express.static(PUBLIC_DIR, { dotfiles: 'allow' }));
 app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
 // Serverless-friendly: create the tables once per instance, on the first API request.

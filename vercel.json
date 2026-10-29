@@ -8,6 +8,8 @@
       { "key": "Cache-Control", "value": "no-cache" },
       { "key": "Content-Type", "value": "application/javascript; charset=utf-8" } ] },
     { "source": "/manifest-driver.webmanifest", "headers": [
-      { "key": "Content-Type", "value": "application/manifest+json" } ] }
+      { "key": "Content-Type", "value": "application/manifest+json" } ] },
+    { "source": "/.well-known/assetlinks.json", "headers": [
+      { "key": "Content-Type", "value": "application/json" } ] }
   ]
 }
