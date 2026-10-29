@@ -1,5 +1,4 @@
 {
-  "outputDirectory": "public",
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }],
   "headers": [
     { "source": "/driver-sw.js", "headers": [
