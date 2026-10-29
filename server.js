@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const crypto = require('crypto');
 const { Pool } = require('pg');
@@ -7,7 +8,10 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 const app = express();
 app.set('trust proxy', 1); // behind Vercel's proxy: real client IP for rate limiting
 app.use(express.json({ limit: '600kb' }));
-app.use(express.static('public'));
+
+const PUBLIC_DIR = path.join(__dirname, 'public');
+app.use(express.static(PUBLIC_DIR));
+app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
 // Serverless-friendly: create the tables once per instance, on the first API request.
 let ready = null;
@@ -32,6 +36,8 @@ const STATUS_LABEL = {
   arrived: 'وصل السائق', in_progress: 'جاري الغسيل', completed: 'مكتمل', cancelled: 'ملغى',
 };
 const PAY_STATUS = ['unpaid', 'paid', 'refunded'];
+// a driver may only move an order one step forward: new status -> required current status
+const PREV_STATUS = { on_the_way: 'assigned', arrived: 'on_the_way', in_progress: 'arrived', completed: 'in_progress' };
 const fmt = n => `${Number(n).toFixed(2)} ر.س`;
 const clean = (v, n = 300) => String(v ?? '').trim().slice(0, n);
 const digits = v => String(v ?? '').replace(/\D/g, '');
@@ -317,14 +323,22 @@ A.post('/settings', h(async (req, res) => {
 }));
 app.use('/api/admin', A);
 
-// ---------- captain API ----------
+// ---------- driver API ----------
 app.post('/api/staff/login', h(async (req, res) => {
   const phone = digits((req.body || {}).phone), pw = String((req.body || {}).password || '');
+  const key = 'staff:' + req.ip + ':' + phone;
+  if (limited(key)) return res.status(429).json({ error: 'محاولات كثيرة، حاول بعد 10 دقائق' });
   const { rows } = await pool.query('SELECT * FROM staff WHERE phone=$1', [phone]);
-  if (!rows[0] || !checkPw(pw, rows[0].password_hash)) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  if (!rows[0] || !checkPw(pw, rows[0].password_hash)) { noteFail(key); return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' }); }
+  loginFails.delete(key);
   const token = crypto.randomBytes(32).toString('hex');
   await pool.query('UPDATE staff SET token=$1 WHERE id=$2', [token, rows[0].id]);
   res.json({ token, name: rows[0].full_name });
+}));
+
+app.post('/api/staff/logout', requireStaff, h(async (req, res) => {
+  await pool.query('UPDATE staff SET token=NULL WHERE id=$1', [req.staff.id]);
+  res.json({ ok: true });
 }));
 
 app.get('/api/staff/jobs', requireStaff, h(async (req, res) => {
@@ -335,9 +349,11 @@ app.get('/api/staff/jobs', requireStaff, h(async (req, res) => {
 
 app.put('/api/staff/jobs/:id/status', requireStaff, h(async (req, res) => {
   const st = (req.body || {}).status;
-  if (!['on_the_way', 'arrived', 'in_progress', 'completed'].includes(st)) return res.status(400).json({ error: 'حالة غير صالحة' });
-  const r = await pool.query('UPDATE orders SET status=$1 WHERE id=$2 AND captain_id=$3 RETURNING id', [st, req.params.id, req.staff.id]);
-  if (!r.rowCount) return res.status(404).json({ error: 'الطلب غير موجود' });
+  if (!(st in PREV_STATUS)) return res.status(400).json({ error: 'حالة غير صالحة' });
+  const r = await pool.query(
+    'UPDATE orders SET status=$1 WHERE id=$2 AND captain_id=$3 AND status=$4 RETURNING id',
+    [st, req.params.id, req.staff.id, PREV_STATUS[st]]);
+  if (!r.rowCount) return res.status(409).json({ error: 'لا يمكن تغيير الحالة' });
   res.json({ ok: true });
 }));
 
