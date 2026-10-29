@@ -1,5 +1,8 @@
 {
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }],
+  "functions": {
+    "api/index.js": { "includeFiles": "public/**" }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "headers": [
     { "source": "/driver-sw.js", "headers": [
       { "key": "Cache-Control", "value": "no-cache" },
