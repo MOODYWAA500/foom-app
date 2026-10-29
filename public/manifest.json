@@ -1,0 +1,19 @@
+{
+  "id": "/driver.html",
+  "name": "FOAM — تطبيق السائق",
+  "short_name": "FOAM سائق",
+  "description": "استقبل طلبات الغسيل وحدّث حالتها وشارك موقعك",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/driver.html",
+  "scope": "/driver.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1233",
+  "theme_color": "#0b1233",
+  "icons": [
+    { "src": "/icons/driver-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/driver-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/driver-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

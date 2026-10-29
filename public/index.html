@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOAM | فوم - غسيل وتلميع السيارات المتنقل</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{colors:{foam:{blue:'#1642f6',dark:'#0b2496',night:'#070c1a',lime:'#ccff00',soft:'#F3F5FC'}},fontFamily:{cairo:['Cairo','sans-serif']}}}}
+</script>
+<style>
+body{font-family:'Cairo',sans-serif;scroll-behavior:smooth}
+html{scroll-behavior:smooth}
+.bubble{position:absolute;border-radius:9999px;background:rgba(255,255,255,.12);animation:float 7s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+.opt:has(input:checked){border-color:#1642f6;background:#eef2ff;color:#1642f6}
+</style>
+</head>
+<body class="bg-foam-soft text-slate-800">
+
+<!-- NAV -->
+<header class="fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="#home" class="flex items-center gap-2 font-black text-xl text-foam-blue">
+      <span class="w-9 h-9 rounded-xl bg-foam-lime text-foam-dark flex items-center justify-center"><i class="fa-solid fa-soap"></i></span> FOAM
+    </a>
+    <nav class="hidden md:flex gap-7 text-sm font-bold text-slate-600">
+      <a href="#services" class="hover:text-foam-blue">الخدمات</a>
+      <a href="#how" class="hover:text-foam-blue">كيف نعمل</a>
+      <a href="#book" class="hover:text-foam-blue">احجز</a>
+      <a href="#shop" class="hover:text-foam-blue">المتجر</a>
+      <a href="#orders" class="hover:text-foam-blue">طلباتي</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <button id="acctBtn" onclick="openAuth('login')" class="border border-foam-blue text-foam-blue hover:bg-blue-50 text-sm font-black px-4 py-2 rounded-xl transition"><i class="fa-solid fa-user ml-1"></i> <span id="acctTxt">دخول / تسجيل</span></button>
+      <a href="#book" class="bg-foam-blue hover:bg-foam-dark text-white text-sm font-black px-5 py-2 rounded-xl transition">احجز الآن</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section id="home" class="relative overflow-hidden bg-gradient-to-bl from-foam-blue via-foam-blue to-foam-dark pt-32 pb-24 text-white">
+  <span class="bubble w-40 h-40 top-24 right-10"></span><span class="bubble w-24 h-24 bottom-10 left-1/3" style="animation-delay:1s"></span><span class="bubble w-16 h-16 top-40 left-16" style="animation-delay:2s"></span>
+  <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center relative">
+    <div class="space-y-5">
+      <span class="inline-block bg-foam-lime text-foam-dark text-xs font-black px-3 py-1 rounded-full">خصم 20% بكود FOAM20 🔥</span>
+      <h1 class="text-4xl md:text-6xl font-black leading-tight">سيارتك تستاهل <span class="text-foam-lime">الأفضل!</span></h1>
+      <p class="text-blue-100 text-lg max-w-md">غسيل وتلميع احترافي يصلك أمام بيتك أو مكتبك في جدة والرياض ومكة. اطلب وارتاح.</p>
+      <div class="flex flex-wrap gap-3 pt-2">
+        <a href="#book" class="bg-foam-lime hover:bg-[#b3e600] text-foam-dark font-black px-7 py-3 rounded-2xl transition">اطلب خدمتك <i class="fa-solid fa-arrow-left mr-1"></i></a>
+        <a href="#services" class="bg-white/15 hover:bg-white/25 border border-white/30 font-bold px-7 py-3 rounded-2xl transition">شوف الباقات</a>
+      </div>
+      <div class="flex gap-8 pt-4 text-sm">
+        <div><div class="text-2xl font-black text-foam-lime">+5,000</div>غسلة منفذة</div>
+        <div><div class="text-2xl font-black text-foam-lime">4.9 ★</div>تقييم العملاء</div>
+        <div><div class="text-2xl font-black text-foam-lime">30 د</div>متوسط الوصول</div>
+      </div>
+    </div>
+    <div class="hidden md:flex justify-center">
+      <div class="w-80 h-80 rounded-[3rem] bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur relative">
+        <i class="fa-solid fa-car-side text-[9rem] text-foam-lime"></i>
+        <span class="absolute -top-4 -left-4 w-16 h-16 rounded-2xl bg-white text-foam-blue text-3xl flex items-center justify-center shadow-xl"><i class="fa-solid fa-soap"></i></span>
+        <span class="absolute -bottom-4 -right-4 w-16 h-16 rounded-2xl bg-foam-lime text-foam-dark text-3xl flex items-center justify-center shadow-xl"><i class="fa-solid fa-sparkles"></i></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services" class="max-w-6xl mx-auto px-4 py-20">
+  <div class="text-center mb-10"><h2 class="text-3xl font-black">باقاتنا وأسعارنا</h2><p class="text-slate-500 mt-2">أسعار واضحة شاملة ما فيها مفاجآت</p></div>
+  <div id="servicesGrid" class="grid md:grid-cols-3 gap-5"></div>
+</section>
+
+<!-- HOW -->
+<section id="how" class="bg-white py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <h2 class="text-3xl font-black text-center mb-10">كيف تطلب؟</h2>
+    <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-5 text-center">
+      <div class="p-5 rounded-3xl bg-foam-soft"><div class="w-14 h-14 mx-auto rounded-2xl bg-foam-blue text-white flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-hand-pointer"></i></div><h4 class="font-black">اختر الباقة</h4><p class="text-sm text-slate-500">حدد سيارتك والخدمة</p></div>
+      <div class="p-5 rounded-3xl bg-foam-soft"><div class="w-14 h-14 mx-auto rounded-2xl bg-foam-blue text-white flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-location-dot"></i></div><h4 class="font-black">حدد موقعك</h4><p class="text-sm text-slate-500">المدينة والحي والعنوان</p></div>
+      <div class="p-5 rounded-3xl bg-foam-soft"><div class="w-14 h-14 mx-auto rounded-2xl bg-foam-blue text-white flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-truck-fast"></i></div><h4 class="font-black">يوصلك السائق</h4><p class="text-sm text-slate-500">خلال 20-30 دقيقة</p></div>
+      <div class="p-5 rounded-3xl bg-foam-soft"><div class="w-14 h-14 mx-auto rounded-2xl bg-foam-lime text-foam-dark flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-sparkles"></i></div><h4 class="font-black">سيارة تلمع</h4><p class="text-sm text-slate-500">وادفع بعد الرضا</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section id="book" class="max-w-6xl mx-auto px-4 py-20">
+  <div class="text-center mb-10"><h2 class="text-3xl font-black">احجز الآن</h2><p class="text-slate-500 mt-2">عبّي البيانات وأكد طلبك في دقيقة</p></div>
+  <div class="grid lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 space-y-6">
+      <div><label class="font-black block mb-2">1. حجم السيارة</label><div id="carOpts" class="grid grid-cols-3 gap-2"></div></div>
+      <div><label class="font-black block mb-2">2. الخدمة</label><div id="pkgOpts" class="grid sm:grid-cols-3 gap-2"></div></div>
+      <div><label class="font-black block mb-2">3. إضافات (اختياري)</label><div id="addonOpts" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div></div>
+      <div><label class="font-black block mb-2">4. الموعد</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="opt cursor-pointer border border-slate-200 rounded-2xl p-3 text-center font-bold text-sm"><input type="radio" name="timeSlot" value="ASAP" checked class="hidden">الآن فوراً ⚡<span class="block text-xs font-normal text-slate-400">خلال 20-30 دقيقة</span></label>
+          <label class="opt cursor-pointer border border-slate-200 rounded-2xl p-3 text-center font-bold text-sm"><input type="radio" name="timeSlot" value="Evening" class="hidden">مسائي 🌙<span class="block text-xs font-normal text-slate-400">6 م - 10 م</span></label>
+        </div></div>
+      <div><label class="font-black block mb-2">5. الموقع</label>
+        <div class="grid sm:grid-cols-2 gap-2">
+          <select id="city" class="border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold bg-slate-50"></select>
+          <select id="district" class="border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold bg-slate-50"></select>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-2 mt-2">
+          <input id="cname" placeholder="الاسم الكامل" autocomplete="name" class="border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50">
+          <input id="cphone" placeholder="رقم الجوال 05xxxxxxxx" dir="ltr" inputmode="tel" autocomplete="tel" class="border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50 text-right">
+        </div>
+        <input id="street" placeholder="الشارع / رقم المبنى (يُعبّأ تلقائياً عند تحديد الموقع)" class="mt-2 w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50">
+        <button type="button" id="geoBtn" onclick="useMyLocation()" class="mt-2 w-full border border-dashed border-foam-blue text-foam-blue rounded-xl py-2.5 text-sm font-bold hover:bg-blue-50"><i class="fa-solid fa-location-crosshairs ml-1"></i> حدّد موقعي تلقائياً بضغطة واحدة</button>
+        <textarea id="notes" rows="2" placeholder="ملاحظات للسائق (لون السيارة، مكان الوقوف...)" class="mt-2 w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50"></textarea>
+      </div>
+    </div>
+
+    <aside class="bg-foam-night text-white rounded-3xl p-6 h-fit lg:sticky lg:top-24 space-y-4">
+      <h3 class="font-black text-lg">ملخص الطلب</h3>
+      <div class="flex gap-2">
+        <input id="coupon" placeholder="كود الخصم" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm uppercase placeholder-slate-400">
+        <button onclick="applyCoupon()" class="bg-foam-lime text-foam-dark font-black text-sm px-4 rounded-xl">تطبيق</button>
+      </div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between text-slate-300"><span>المجموع</span><span id="sSub"></span></div>
+        <div id="sDiscRow" class="hidden flex justify-between text-foam-lime"><span>الخصم</span><span id="sDisc"></span></div>
+        <div class="flex justify-between text-slate-300"><span>ضريبة 15%</span><span id="sVat"></span></div>
+        <div class="flex justify-between font-black text-xl border-t border-white/20 pt-3"><span>الإجمالي</span><span id="sTotal" class="text-foam-lime"></span></div>
+      </div>
+      <button id="submitBtn" onclick="submitOrder()" class="w-full bg-foam-blue hover:bg-blue-500 font-black py-3 rounded-2xl transition">تأكيد الحجز</button>
+      <div id="confirmBox" class="hidden bg-foam-lime text-foam-dark rounded-2xl p-4 text-center">
+        <div class="text-xs font-bold">تم تأكيد طلبك <span id="cId" class="font-mono"></span></div>
+        <div class="text-xs mt-1">رمز الاستلام للسائق:</div>
+        <div id="cOtp" class="text-3xl font-black font-mono tracking-widest"></div>
+      </div>
+      <div id="regBox" class="hidden bg-white/10 border border-white/20 rounded-2xl p-4 space-y-2">
+        <div class="text-sm font-black text-foam-lime"><i class="fa-solid fa-user-shield ml-1"></i> احفظ طلباتك في حسابك</div>
+        <p class="text-xs text-slate-300">اختر رقماً سرياً (6 خانات أو أكثر). بعدها تدخل بجوالك والرقم السري وتتابع طلباتك من أي جهاز.</p>
+        <input id="regPass" type="password" dir="ltr" placeholder="الرقم السري" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-right placeholder-slate-400">
+        <button onclick="createAccountFromOrder()" class="w-full bg-foam-lime text-foam-dark font-black py-2.5 rounded-xl text-sm">إنشاء حسابي</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section id="shop" class="bg-white py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-3xl font-black">متجر العناية بالسيارات</h2>
+      <div class="bg-foam-soft rounded-full px-4 py-2 text-sm font-bold"><i class="fa-solid fa-cart-shopping text-foam-blue ml-1"></i> <span id="cartInfo">السلة فارغة</span></div>
+    </div>
+    <div id="shopGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+  </div>
+</section>
+
+<!-- ORDERS -->
+<section id="orders" class="max-w-6xl mx-auto px-4 py-20">
+  <h2 class="text-3xl font-black mb-8">طلباتي</h2>
+  <div id="ordersHint" class="hidden mb-4 bg-white border border-dashed border-foam-blue rounded-2xl p-4 text-sm flex flex-wrap items-center justify-between gap-2"><span>سجّل دخولك لتتابع طلباتك من أي جهاز وتصلك تنبيهات عند تغيّر حالة الطلب.</span><button onclick="openAuth('login')" class="bg-foam-blue text-white font-black px-4 py-2 rounded-xl text-xs">تسجيل الدخول</button></div>
+  <div id="ordersList" class="grid md:grid-cols-2 gap-4"></div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-foam-night text-slate-300 py-10">
+  <div class="max-w-6xl mx-auto px-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="font-black text-xl text-white"><i class="fa-solid fa-soap text-foam-lime ml-1"></i> FOAM</div>
+    <p class="text-sm">خدمة عملاء 24/7 — جدة · الرياض · مكة المكرمة</p>
+    <div class="flex gap-2">
+      <a href="https://wa.me/966551234567" target="_blank" class="bg-emerald-600 text-white text-sm font-bold px-4 py-2 rounded-xl"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>
+      <a href="tel:920000000" class="bg-white/10 text-white text-sm font-bold px-4 py-2 rounded-xl"><i class="fa-solid fa-phone ml-1"></i> اتصال</a>
+    </div>
+  </div>
+</footer>
+
+<div id="authModal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm" onclick="if(event.target===this)closeAuth()">
+  <div class="w-full max-w-sm bg-white rounded-3xl p-6 space-y-3 shadow-2xl">
+    <div class="flex items-center justify-between"><h3 id="authTitle" class="text-xl font-black"></h3><button onclick="closeAuth()" class="w-8 h-8 rounded-full bg-slate-100"><i class="fa-solid fa-xmark"></i></button></div>
+    <input id="aName" placeholder="الاسم الكامل" class="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50">
+    <input id="aPhone" dir="ltr" inputmode="tel" placeholder="رقم الجوال 05xxxxxxxx" class="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50 text-right">
+    <input id="aPass" type="password" dir="ltr" placeholder="الرقم السري" onkeydown="if(event.key==='Enter')submitAuth()" class="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50 text-right">
+    <div id="aErr" class="hidden text-xs font-bold text-rose-600 bg-rose-50 rounded-xl p-3 text-center"></div>
+    <button id="aSubmit" onclick="submitAuth()" class="w-full bg-foam-blue hover:bg-foam-dark text-white font-black py-3 rounded-2xl"></button>
+    <p id="aSwitch" class="text-center text-xs text-slate-500"></p>
+  </div>
+</div>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl hidden"></div>
+
+<script>
+const CID=(()=>{let i=localStorage.getItem('foam_client_id');if(!i){i=crypto.randomUUID();localStorage.setItem('foam_client_id',i)}return i})();
+let TOKEN=localStorage.getItem('foam_token')||'',ME=null,seen=null,authMode='login';
+const api=(p,o={})=>fetch('/api'+p,{...o,headers:{'Content-Type':'application/json','x-client-id':CID,...(TOKEN?{Authorization:'Bearer '+TOKEN}:{})}}).then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||'error');e.status=r.status;throw e}return d});
+const $=id=>document.getElementById(id);
+const PK={express:{n:'غسيل إكسبريس سريع',p:69,d:'غسيل رغوة خارجي + دواسات + زجاج',i:'fa-shower',c:'bg-blue-100 text-foam-blue'},
+          vip:{n:'باقة VIP بلس الشاملة',p:149,d:'تنظيف داخلي عميق + واكس حماية + تعقيم',i:'fa-crown',c:'bg-amber-100 text-amber-600',hot:1},
+          polish:{n:'تلميع ساطع ديتيلينج',p:249,d:'تلميع كامل للهيكل وإزالة الخدوش الخفيفة',i:'fa-sparkles',c:'bg-purple-100 text-purple-600'}};
+const CARS={sedan:['سيدان',0,'fa-car'],suv:['SUV / جيب',25,'fa-truck-pickup'],large:['كبيرة / جمس',45,'fa-van-shuttle']};
+const ADD={Wax:['طبقة واكس نانو',29],Engine:['غسيل المحرك',35],Ozone:['تعقيم أوزون',19],Steam:['بخار للمقاعد',49]};
+const CITIES={'جدة':['حي الشاطئ','حي المحمدية','حي الحمراء','حي الروضة','حي أبحر الشمالية'],'الرياض':['حي النخيل','حي حطين','حي الصحافة','حي الملقا','حي الياسمين'],'مكة المكرمة':['حي العوالي','حي الشوقية','حي النزهة','حي العزيزية']};
+let rate=0,coupon='',cart=[],geo={};
+function useMyLocation(){
+  return new Promise(done=>{
+    if(!navigator.geolocation){toast('المتصفح لا يدعم تحديد الموقع');return done(false)}
+    const b=$('geoBtn');b.textContent='جاري تحديد موقعك...';
+    navigator.geolocation.getCurrentPosition(p=>{
+      geo={lat:p.coords.latitude,lng:p.coords.longitude};
+      b.innerHTML='<i class="fa-solid fa-circle-check ml-1"></i> تم تحديد موقعك (اضغط لإعادة التحديد)';
+      toast('تم حفظ موقعك ✅');fillAddress(geo.lat,geo.lng);done(true);
+    },()=>{
+      b.innerHTML='<i class="fa-solid fa-location-crosshairs ml-1"></i> حدّد موقعي تلقائياً بضغطة واحدة';
+      toast('تعذر تحديد الموقع، اسمح للمتصفح بالوصول للموقع أو اكتب العنوان');done(false);
+    },{enableHighAccuracy:true,timeout:15000});
+  });
+}
+// best effort: turn coordinates into an address (OpenStreetMap), fills empty fields only
+async function fillAddress(lat,lng){
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&lat=${lat}&lon=${lng}`);
+    const a=(await r.json()).address||{};
+    const town=a.city||a.town||a.state||'';
+    const city=Object.keys(CITIES).find(c=>town.includes(c));
+    if(city){$('city').value=city;fillDistricts();
+      const area=a.suburb||a.neighbourhood||a.city_district||'';
+      const d=[...$('district').options].find(o=>area&&area.includes(o.value.replace('حي ','')));if(d)$('district').value=d.value}
+    const txt=[a.road,a.neighbourhood||a.suburb].filter(Boolean).join('، ');
+    if(txt&&!$('street').value.trim())$('street').value=txt;
+  }catch(_){}
+}
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.add('hidden'),3000)}
+const pick=n=>document.querySelector(`input[name="${n}"]:checked`)?.value;
+
+// build UI
+$('servicesGrid').innerHTML=Object.entries(PK).map(([k,v])=>`
+ <div class="bg-white rounded-3xl p-6 border ${v.hot?'border-foam-blue shadow-xl':'border-slate-200'} space-y-4 relative">
+  ${v.hot?'<span class="absolute -top-3 right-6 bg-foam-lime text-foam-dark text-xs font-black px-3 py-1 rounded-full">الأكثر طلباً ⭐</span>':''}
+  <div class="w-12 h-12 rounded-2xl ${v.c} flex items-center justify-center text-xl"><i class="fa-solid ${v.i}"></i></div>
+  <h3 class="font-black text-lg">${v.n}</h3><p class="text-sm text-slate-500">${v.d}</p>
+  <div class="flex items-end justify-between"><div><span class="text-3xl font-black text-foam-blue">${v.p}</span> <span class="text-xs text-slate-400 font-bold">ر.س</span></div>
+  <button onclick="choosePkg('${k}')" class="bg-foam-blue hover:bg-foam-dark text-white text-sm font-black px-4 py-2 rounded-xl">احجز</button></div></div>`).join('');
+$('carOpts').innerHTML=Object.entries(CARS).map(([k,v],i)=>`<label class="opt cursor-pointer border border-slate-200 rounded-2xl p-3 text-center"><input type="radio" name="carType" value="${k}" ${i?'':'checked'} onchange="calc()" class="hidden"><i class="fa-solid ${v[2]} text-xl block mb-1"></i><span class="text-sm font-black block">${v[0]}</span><span class="text-xs text-slate-400">${v[1]?'+'+v[1]+' ر.س':'قياسي'}</span></label>`).join('');
+$('pkgOpts').innerHTML=Object.entries(PK).map(([k,v],i)=>`<label class="opt cursor-pointer border border-slate-200 rounded-2xl p-3"><input type="radio" name="pkg" value="${k}" ${i?'':'checked'} onchange="calc()" class="hidden"><span class="text-sm font-black block">${v.n}</span><span class="text-xs text-slate-400">${v.p} ر.س</span></label>`).join('');
+$('addonOpts').innerHTML=Object.entries(ADD).map(([k,v])=>`<label class="opt cursor-pointer border border-slate-200 rounded-xl p-3 text-center"><input type="checkbox" value="${k}" onchange="calc()" class="hidden addon"><span class="text-xs font-bold block">${v[0]}</span><span class="text-xs text-slate-400">+${v[1]}</span></label>`).join('');
+$('city').innerHTML=Object.keys(CITIES).map(c=>`<option>${c}</option>`).join('');
+function fillDistricts(){$('district').innerHTML=CITIES[$('city').value].map(d=>`<option>${d}</option>`).join('')}
+$('city').onchange=fillDistricts;fillDistricts();
+
+function choosePkg(k){document.querySelector(`input[name="pkg"][value="${k}"]`).checked=true;calc();$('book').scrollIntoView()}
+function calc(){
+  const sub=PK[pick('pkg')].p+CARS[pick('carType')][1]+[...document.querySelectorAll('.addon:checked')].reduce((s,a)=>s+ADD[a.value][1],0);
+  const disc=sub*rate,vat=(sub-disc)*.15,tot=sub-disc+vat,f=n=>n.toFixed(2)+' ر.س';
+  $('sSub').textContent=f(sub);$('sVat').textContent=f(vat);$('sTotal').textContent=f(tot);
+  $('sDiscRow').classList.toggle('hidden',!rate);$('sDisc').textContent='-'+f(disc);
+}
+function applyCoupon(){
+  if($('coupon').value.trim().toUpperCase()==='FOAM20'){rate=.2;coupon='FOAM20';toast('تم تطبيق خصم 20% 🎉')}
+  else{rate=0;coupon='';toast('كود الخصم غير صحيح (جرب FOAM20)')}
+  calc();
+}
+async function submitOrder(){
+  if($('cname').value.trim().length<2){toast('اكتب اسمك');$('cname').focus();return}
+  if(String($('cphone').value).replace(/\D/g,'').length<9){toast('اكتب رقم جوال صحيح');$('cphone').focus();return}
+  if(geo.lat==null)await useMyLocation();
+  if(!$('street').value.trim()&&geo.lat==null){toast('حدد موقعك أو اكتب الشارع');$('street').focus();return}
+  const b=$('submitBtn');b.disabled=true;b.textContent='جاري الإرسال...';
+  try{
+    const o=await api('/orders',{method:'POST',body:JSON.stringify({
+      carType:pick('carType'),packageKey:pick('pkg'),timeSlot:pick('timeSlot'),
+      addons:[...document.querySelectorAll('.addon:checked')].map(a=>a.value),
+      customerName:$('cname').value,customerPhone:$('cphone').value,lat:geo.lat,lng:geo.lng,street:$('street').value,notes:$('notes').value,coupon,city:$('city').value,district:$('district').value})});
+    $('cId').textContent=o.id;$('cOtp').textContent=o.otpCode;$('confirmBox').classList.remove('hidden');
+    toast('تم تأكيد طلبك! 🚀');loadOrders();if(!TOKEN)$('regBox').classList.remove('hidden');
+  }catch(e){toast(e.status&&e.message!=='error'?e.message:'تعذر إرسال الطلب، حاول مرة أخرى')}
+  b.disabled=false;b.textContent='تأكيد الحجز';
+}
+function notify(msg){toast('🔔 '+msg);try{if('Notification' in window&&Notification.permission==='granted')new Notification('FOAM',{body:msg})}catch(_){}}
+async function loadOrders(){
+  let list=[];
+  try{list=await api('/orders')}catch(e){if(e.status===401&&TOKEN){TOKEN='';ME=null;localStorage.removeItem('foam_token');applyMe()}}
+  if(seen)list.forEach(o=>{if(seen[o.id]&&seen[o.id]!==o.status)notify('طلبك '+o.id+': '+o.statusLabel)});
+  seen={};list.forEach(o=>seen[o.id]=o.status);
+  $('ordersList').innerHTML=list.length?list.map(o=>`
+   <div class="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
+    <div class="flex justify-between text-sm"><span class="font-mono font-black text-foam-blue">${o.id}</span><span class="bg-blue-50 text-foam-blue text-xs font-black px-3 py-1 rounded-full">${o.statusLabel}</span></div>
+    <div class="flex justify-between font-bold text-sm"><span>${o.packageTitle} (${o.carType})</span><span>${o.totalAmount}</span></div>
+    <div class="flex justify-between text-xs text-slate-400"><span>📍 ${o.address}</span><span>رمز الاستلام: <b class="font-mono text-slate-700">${o.otpCode}</b></span></div>
+   </div>`).join(''):'<div class="md:col-span-2 bg-white rounded-3xl p-10 text-center text-slate-400"><i class="fa-solid fa-box-open text-4xl mb-2"></i><p class="font-bold">لا توجد طلبات بعد. احجز أول غسلة!</p></div>';
+}
+async function loadShop(){
+  let list=[];try{list=await api('/products')}catch{}
+  $('shopGrid').innerHTML=list.map(p=>`
+   <div class="bg-foam-soft rounded-2xl p-3 text-center space-y-2">
+    <img src="${p.img}" alt="" class="w-full h-28 object-cover rounded-xl">
+    <h4 class="text-sm font-black">${p.name}</h4>
+    <div class="font-black text-foam-blue">${Number(p.price).toFixed(2)} ر.س</div>
+    <button onclick='addCart(${JSON.stringify({n:p.name,p:p.price})})' class="w-full bg-white hover:bg-foam-blue hover:text-white border border-slate-200 text-sm font-black py-2 rounded-xl transition">أضف للسلة</button>
+   </div>`).join('');
+}
+function addCart(i){cart.push(i);$('cartInfo').textContent=cart.length+' منتجات — '+cart.reduce((s,x)=>s+Number(x.p),0).toFixed(2)+' ر.س';toast('أضفنا: '+i.n)}
+// ---------- customer account ----------
+function applyMe(){
+  $('acctTxt').textContent=ME?ME.name.split(' ')[0]:'دخول / تسجيل';
+  ['cname','cphone'].forEach(id=>{$(id).readOnly=!!ME;$(id).classList.toggle('opacity-70',!!ME)});
+  if(ME){$('cname').value=ME.name;$('cphone').value=ME.phone}
+  $('ordersHint').classList.toggle('hidden',!!ME);
+}
+function openAuth(mode){
+  if(ME){if(confirm('تسجيل الخروج من حسابك ('+ME.name+')؟'))logout();return}
+  authMode=mode||'login';renderAuth();$('authModal').classList.remove('hidden');$('authModal').classList.add('flex');
+}
+function closeAuth(){$('authModal').classList.add('hidden');$('authModal').classList.remove('flex')}
+function renderAuth(){
+  const L=authMode==='login';
+  $('authTitle').textContent=L?'تسجيل الدخول':'إنشاء حساب';$('aName').classList.toggle('hidden',L);$('aSubmit').textContent=L?'دخول':'إنشاء الحساب';$('aErr').classList.add('hidden');
+  $('aSwitch').innerHTML=L?'ما عندك حساب؟ <a href="#" onclick="authMode=\'register\';renderAuth();return false" class="text-foam-blue font-bold">أنشئ حساباً</a> · نسيت الرقم السري؟ <a href="https://wa.me/966551234567" target="_blank" class="text-foam-blue font-bold">راسلنا</a>'
+    :'عندك حساب؟ <a href="#" onclick="authMode=\'login\';renderAuth();return false" class="text-foam-blue font-bold">سجّل دخولك</a>';
+}
+function setSession(d){
+  TOKEN=d.token;localStorage.setItem('foam_token',TOKEN);ME={name:d.name,phone:d.phone};seen=null;applyMe();loadOrders();
+  try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(_){}
+}
+async function submitAuth(){
+  const body={phone:$('aPhone').value,password:$('aPass').value};if(authMode==='register')body.name=$('aName').value;
+  try{const d=await api('/customer/'+authMode,{method:'POST',body:JSON.stringify(body)});setSession(d);closeAuth();toast('أهلاً '+d.name+' 👋')}
+  catch(e){$('aErr').textContent=e.status?e.message:'تعذر الاتصال بالسيرفر';$('aErr').classList.remove('hidden')}
+}
+async function createAccountFromOrder(){
+  const pw=$('regPass').value;if(pw.length<6)return toast('الرقم السري 6 خانات على الأقل');
+  try{const d=await api('/customer/register',{method:'POST',body:JSON.stringify({name:$('cname').value,phone:$('cphone').value,password:pw})});
+    setSession(d);$('regBox').classList.add('hidden');toast('تم إنشاء حسابك ✅ طلباتك محفوظة')}
+  catch(e){if(e.status===409){toast('هذا الرقم لديه حساب، سجّل دخولك');openAuth('login');$('aPhone').value=$('cphone').value}else toast(e.message||'تعذر إنشاء الحساب')}
+}
+function logout(){
+  api('/customer/logout',{method:'POST'}).catch(()=>{});
+  TOKEN='';ME=null;seen=null;localStorage.removeItem('foam_token');$('cname').value='';$('cphone').value='';applyMe();loadOrders();toast('تم تسجيل الخروج');
+}
+async function initAuth(){
+  if(TOKEN){try{ME=await api('/customer/me')}catch(e){if(e.status===401){TOKEN='';localStorage.removeItem('foam_token')}}}
+  applyMe();loadOrders();
+}
+calc();initAuth();loadShop();setInterval(loadOrders,15000);
+</script>
+</body>
+</html>

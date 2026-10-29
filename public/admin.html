@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة إدارة FOAM لغسيل السيارات</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Tajawal','system-ui','sans-serif']},colors:{brand:'#1642f6',ink:'#0b1233',lime:'#ccff00'}}}}
+</script>
+<style>
+body{font-family:'Tajawal',sans-serif;background:#e8ecfb;color:#1e293b}
+.glass{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px)}
+.navbtn{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:1rem;font-size:.9rem;font-weight:700;white-space:nowrap;color:#c5cbe8;transition:.15s;width:100%;cursor:pointer;background:transparent;border:none}
+.navbtn:hover{background:rgba(255,255,255,.08);color:#fff}
+.navbtn.active{background:#1642f6;color:#fff}
+.navbtn i{width:1.25rem;text-align:center}
+.field-dark{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:14px;padding:.65rem .9rem;width:100%;outline:none}
+.field-dark:focus{border-color:#ccff00}
+.field-light{background:#fff;border:1px solid #cbd5e1;color:#1e293b;border-radius:12px;padding:.65rem .9rem;width:100%;outline:none}
+.field-light:focus{border-color:#1642f6;box-shadow:0 0 0 3px rgba(22,66,246,.15)}
+@media (max-width:768px){input,select,textarea{font-size:16px!important}}
+.trk-icon{background:transparent;border:none}
+.trk-pin{position:relative;width:44px;display:flex;flex-direction:column;align-items:center}
+.trk-avatar{width:44px;height:44px;border-radius:50%;border:3px solid;display:grid;place-items:center;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.35);position:relative;z-index:2}
+.trk-name{margin-top:3px;color:#fff;font:700 10px Tajawal,sans-serif;padding:1px 7px;border-radius:999px;white-space:nowrap;position:relative;z-index:2}
+.trk-pulse{position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;opacity:.45;animation:trkPulse 2s ease-out infinite;z-index:1}
+.trk-dest{width:30px;height:30px;border-radius:10px;background:#f43f5e;color:#fff;display:grid;place-items:center;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+@keyframes trkPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
+</style>
+</head>
+<body class="p-3 md:p-6 min-h-screen">
+
+<!-- LOGIN -->
+<div id="loginOverlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-ink text-white rounded-[32px] p-8 shadow-2xl space-y-6 border border-white/10">
+    <div class="text-center space-y-2">
+      <div class="w-16 h-16 mx-auto rounded-3xl bg-brand flex items-center justify-center text-2xl"><i class="fa-solid fa-soap text-lime"></i></div>
+      <h2 class="text-2xl font-extrabold">دخول إدارة FOAM</h2>
+      <p class="text-xs text-slate-400">أدخل كلمة مرور الأدمن للوصول إلى لوحة التحكم</p>
+    </div>
+    <form onsubmit="event.preventDefault();doLogin()" class="space-y-4">
+      <input id="loginPass" type="password" dir="ltr" required placeholder="••••••••" class="field-dark text-left font-bold">
+      <div id="loginErr" class="hidden text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-center"></div>
+      <button id="loginBtn" type="submit" class="w-full bg-brand hover:opacity-90 text-white font-extrabold rounded-2xl py-3.5 transition">دخول لوحة التحكم</button>
+    </form>
+  </div>
+</div>
+
+<div class="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-4">
+
+  <!-- SIDEBAR -->
+  <aside class="lg:w-64 shrink-0 bg-ink text-white rounded-[32px] p-4 lg:p-5 flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start lg:min-h-[calc(100vh-3rem)]">
+    <div class="flex items-center gap-3 lg:pb-5 lg:border-b lg:border-white/10">
+      <div class="w-11 h-11 rounded-2xl bg-lime text-ink grid place-items-center text-lg"><i class="fa-solid fa-soap"></i></div>
+      <div><div class="font-extrabold leading-tight">لوحة إدارة FOAM</div><div class="text-xs text-slate-400">غسيل وتلميع السيارات</div></div>
+    </div>
+    <nav class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible">
+      <button data-view="bookings" onclick="setView('bookings')" class="navbtn active"><i class="fa-solid fa-clipboard-list"></i><span class="flex-1">الطلبات</span><span id="navPending" class="hidden bg-rose-500 text-white text-xs rounded-full min-w-[1.4rem] h-6 px-1.5 grid place-items-center"></span></button>
+      <button data-view="clients" onclick="setView('clients')" class="navbtn"><i class="fa-solid fa-users"></i><span class="flex-1">العملاء</span></button>
+      <button data-view="captains" onclick="setView('captains')" class="navbtn"><i class="fa-solid fa-user-gear"></i><span class="flex-1">السائقون</span></button>
+      <button data-view="tracking" onclick="setView('tracking')" class="navbtn"><i class="fa-solid fa-location-crosshairs"></i><span class="flex-1">تتبع السائقين</span><span id="navTracking" class="hidden bg-emerald-500 text-white text-xs rounded-full min-w-[1.4rem] h-6 px-1.5 grid place-items-center"></span></button>
+      <button data-view="settings" onclick="setView('settings')" class="navbtn"><i class="fa-solid fa-building-columns"></i><span class="flex-1">بيانات الدفع</span></button>
+    </nav>
+    <div class="lg:mt-auto pt-4 border-t border-white/10">
+      <button onclick="logout()" class="w-full glass rounded-2xl px-4 py-2.5 text-xs font-bold hover:bg-white/20 transition text-rose-300"><i class="fa-solid fa-right-from-bracket ml-1"></i> تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 min-w-0 bg-[#f7f8ff] rounded-[32px] p-4 md:p-8 shadow-xl">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div><h1 id="pageTitle" class="text-3xl md:text-4xl font-extrabold">الطلبات</h1><p id="pageSub" class="text-slate-500 mt-1 text-sm"></p></div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span id="srvBadge" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-2 rounded-full text-xs flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span><span id="srvText" class="font-bold">السيرفر متصل</span></span>
+        <div id="filterBox" class="flex items-center bg-white border border-slate-200 rounded-full px-4 py-2 text-xs">
+          <i class="fa-regular fa-calendar-check text-brand ml-2"></i><span class="ml-2 font-semibold text-slate-500">النطاق:</span>
+          <select id="timeFilter" onchange="applyFilter()" class="bg-transparent font-bold text-brand focus:outline-none cursor-pointer"><option value="today">طلبات اليوم</option><option value="all">جميع الأوقات</option></select>
+        </div>
+        <button onclick="loadAll()" class="bg-white hover:bg-slate-50 text-xs px-4 py-2.5 rounded-full border border-slate-200 text-slate-600"><i class="fa-solid fa-rotate ml-1"></i> تحديث</button>
+        <button id="addCaptainBtn" onclick="openStaffModal()" class="hidden bg-brand hover:opacity-90 text-white text-sm font-bold px-5 py-2.5 rounded-full"><i class="fa-solid fa-plus ml-1"></i> إضافة سائق</button>
+      </div>
+    </div>
+
+    <!-- bookings -->
+    <section id="view-bookings" class="space-y-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-brand/10 text-brand grid place-items-center text-xl"><i class="fa-solid fa-sack-dollar"></i></div><div><p class="text-xs text-slate-500 font-semibold">الإيرادات</p><h3 class="text-xl font-extrabold" id="kRevenue">0</h3></div></div>
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 grid place-items-center text-xl"><i class="fa-solid fa-car-on"></i></div><div><p class="text-xs text-slate-500 font-semibold" id="kLblOrders">طلبات اليوم</p><h3 class="text-xl font-extrabold" id="kOrders">0</h3></div></div>
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 grid place-items-center text-xl"><i class="fa-solid fa-users"></i></div><div><p class="text-xs text-slate-500 font-semibold">العملاء</p><h3 class="text-xl font-extrabold" id="kClients">0</h3></div></div>
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 grid place-items-center text-xl"><i class="fa-solid fa-chart-pie"></i></div><div><p class="text-xs text-slate-500 font-semibold">متوسط الطلب</p><h3 class="text-xl font-extrabold" id="kAvg">0</h3></div></div>
+      </div>
+      <div class="bg-ink rounded-[28px] p-4 md:p-6 text-white space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <h2 class="text-base font-bold flex items-center gap-2"><i class="fa-solid fa-list-check text-lime"></i><span id="tableTitle">جدول الطلبات (اليوم)</span></h2>
+          <input id="searchInput" onkeyup="renderTable()" placeholder="بحث بالاسم أو الجوال أو رقم الطلب..." class="field-dark !rounded-full !py-2 text-xs w-full sm:w-72">
+        </div>
+        <div class="rounded-2xl overflow-x-auto bg-white text-slate-700">
+          <table class="w-full text-right text-xs min-w-[820px]">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr>
+              <th class="p-3.5">رقم الطلب</th><th class="p-3.5">العميل</th><th class="p-3.5">الخدمة والسيارة</th><th class="p-3.5">الموعد</th><th class="p-3.5">العنوان</th><th class="p-3.5">المبلغ</th><th class="p-3.5">الحالة / السائق</th><th class="p-3.5 text-center">إجراء</th></tr></thead>
+            <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-clients" class="hidden space-y-4"><div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="clientsGrid"></div></section>
+    <section id="view-captains" class="hidden"><div id="captainsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div></section>
+
+    <!-- tracking -->
+    <section id="view-tracking" class="hidden space-y-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white border border-slate-100 rounded-2xl p-4"><p class="text-[11px] text-slate-500 font-bold">متصلون الآن</p><h3 class="text-xl font-extrabold text-emerald-600" id="tOnline">0</h3></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4"><p class="text-[11px] text-slate-500 font-bold">في الطريق</p><h3 class="text-xl font-extrabold text-brand" id="tTrip">0</h3></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4"><p class="text-[11px] text-slate-500 font-bold">غير متصلين</p><h3 class="text-xl font-extrabold text-slate-500" id="tOff">0</h3></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4"><p class="text-[11px] text-slate-500 font-bold">طلبات بلا سائق</p><h3 class="text-xl font-extrabold text-amber-600" id="tUnassigned">0</h3></div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div id="tChips" class="flex flex-wrap gap-1.5"></div>
+        <input id="tSearch" oninput="tSearchTxt=this.value.trim().toLowerCase();renderTracking()" placeholder="بحث باسم السائق..." class="field-light !rounded-full !py-2 text-xs w-full sm:w-56 sm:mr-auto">
+        <button onclick="fitAll()" class="bg-white border border-slate-200 text-xs font-bold px-4 py-2 rounded-full"><i class="fa-solid fa-expand ml-1"></i> عرض الكل</button>
+      </div>
+      <div class="grid lg:grid-cols-[340px_1fr] gap-4">
+        <div id="tList" class="space-y-2.5 lg:max-h-[68vh] lg:overflow-y-auto order-2 lg:order-1"></div>
+        <div class="order-1 lg:order-2 relative" style="z-index:0;isolation:isolate">
+          <div id="trackMap" class="w-full rounded-3xl border border-slate-200 overflow-hidden shadow-sm" style="height:68vh;min-height:380px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- settings -->
+    <section id="view-settings" class="hidden max-w-2xl space-y-5">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
+        <h2 class="font-extrabold text-lg flex items-center gap-2"><i class="fa-solid fa-building-columns text-brand"></i> بيانات الحساب البنكي للفواتير</h2>
+        <p class="text-xs text-slate-500">تُحفظ مرة واحدة وتُضاف تلقائياً في فاتورة الواتساب المرسلة للعميل.</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="text-xs font-bold">اسم البنك<input id="setBank" oninput="renderPreview()" class="field-light mt-1" placeholder="مثال: بنك الراجحي"></label>
+          <label class="text-xs font-bold">اسم صاحب الحساب<input id="setHolder" oninput="renderPreview()" class="field-light mt-1"></label>
+        </div>
+        <label class="block text-xs font-bold">رقم الآيبان (IBAN)<input id="setIban" oninput="renderPreview()" dir="ltr" class="field-light mt-1 tracking-wider font-bold" placeholder="SA00 0000 0000 0000 0000 0000"></label>
+        <label class="block text-xs font-bold">ملاحظة أسفل الفاتورة (اختياري)<input id="setNote" oninput="renderPreview()" class="field-light mt-1" placeholder="يرجى إرسال إيصال التحويل لتأكيد الطلب"></label>
+        <button onclick="saveSettings()" class="bg-brand hover:opacity-90 text-white font-extrabold rounded-full px-7 py-3">حفظ بيانات الدفع</button>
+      </div>
+      <div class="bg-ink text-white rounded-3xl p-5 space-y-2"><p class="text-xs font-bold text-lime">معاينة الفاتورة عبر واتساب</p><pre id="preview" class="text-xs whitespace-pre-wrap leading-relaxed font-sans bg-black/20 p-4 rounded-2xl"></pre></div>
+    </section>
+  </main>
+</div>
+
+<!-- ORDER MODAL -->
+<div id="modal" class="hidden fixed inset-0 z-40 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onclick="if(event.target===this)closeModal()">
+  <div class="w-full max-w-lg max-h-[92vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div class="shrink-0 bg-ink text-white px-6 py-4 flex items-center justify-between">
+      <div><h3 class="text-base font-extrabold">تفاصيل الطلب والإجراء</h3><p id="modalSub" class="text-[11px] text-lime font-mono mt-0.5"></p></div>
+      <button onclick="closeModal()" class="w-8 h-8 rounded-lg glass hover:bg-white/20"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="modalBody" class="flex-1 min-h-0 overflow-y-auto p-6 space-y-4"></div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div id="staffModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onclick="if(event.target===this)closeStaffModal()">
+  <div class="w-full max-w-md max-h-[92vh] overflow-y-auto bg-ink text-white rounded-3xl p-6 md:p-8 shadow-2xl">
+    <div class="flex items-center justify-between mb-5"><h2 class="text-xl font-extrabold">إضافة سائق جديد</h2><button onclick="closeStaffModal()" class="glass rounded-full w-9 h-9"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="flex items-center gap-4 mb-5">
+      <img id="photoPreview" class="w-20 h-20 rounded-full object-cover bg-white/15" alt="">
+      <label class="glass rounded-full px-4 py-2 text-sm cursor-pointer hover:bg-white/20"><i class="fa-regular fa-image ml-1"></i> اختيار صورة<input type="file" accept="image/*" class="hidden" onchange="pickPhoto(event)"></label>
+    </div>
+    <div class="space-y-4">
+      <label class="block text-sm">الاسم الكامل<input id="sName" class="field-dark mt-1.5" autocomplete="off"></label>
+      <label class="block text-sm">رقم الجوال (للدخول)<input id="sPhone" class="field-dark mt-1.5" dir="ltr" inputmode="tel" placeholder="05xxxxxxxx"></label>
+      <div class="text-sm"><label for="sPass">كلمة المرور</label>
+        <div class="flex gap-2 mt-1.5"><input id="sPass" class="field-dark" dir="ltr" autocomplete="new-password"><button type="button" onclick="$('sPass').value=genPass()" class="glass rounded-2xl px-4 text-sm hover:bg-white/20">توليد</button></div>
+        <span class="text-xs text-slate-400">8 أحرف على الأقل. تظهر لك الآن فقط عند الحفظ، فسلّمها للسائق.</span></div>
+    </div>
+    <button id="saveStaffBtn" onclick="saveStaff()" class="bg-lime text-ink font-extrabold rounded-full px-7 py-3 w-full mt-6 hover:opacity-90 disabled:opacity-60">حفظ الحساب</button>
+  </div>
+</div>
+
+<!-- CAPTAIN MODAL -->
+<div id="capModal" class="hidden fixed inset-0 z-40 items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm" onclick="if(event.target===this)closeCapModal()">
+  <div class="w-full max-w-lg max-h-[92vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div class="shrink-0 bg-ink text-white px-5 py-4 flex items-center justify-between"><h3 class="text-base font-extrabold"><i class="fa-solid fa-user-gear ml-2 text-lime"></i>تفاصيل السائق</h3><button onclick="closeCapModal()" class="w-9 h-9 rounded-xl glass hover:bg-white/20"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="capBody" class="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 bg-[#f7f8ff]"></div>
+  </div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script>
+const API='/api/admin';
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let bookings=[],shown=[],staff=[],tracking=[],view='bookings',curId=null,pay='unpaid',bank={},known=null,photo=null,openCap=null;
+const STATUSES=[['pending','قيد الانتظار'],['assigned','تم تعيين سائق'],['on_the_way','السائق في الطريق'],['arrived','وصل السائق'],['in_progress','جاري الغسيل'],['completed','مكتمل'],['cancelled','ملغى']];
+const PAYL={unpaid:'غير مدفوع',paid:'مدفوع',refunded:'مسترجع'};
+const SLOT={ASAP:'فوري ⚡',Evening:'مسائي 🌙'};
+const stLabel=s=>(STATUSES.find(x=>x[0]===s)||[0,s])[1];
+const stCls=s=>s==='completed'?'bg-emerald-100 text-emerald-700':s==='pending'?'bg-amber-100 text-amber-700':s==='cancelled'?'bg-rose-100 text-rose-700':'bg-indigo-100 text-indigo-700';
+const ymd=d=>{const x=new Date(d);return isNaN(x)?'':`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+const money=n=>Number(n||0).toFixed(2)+' ر.س';
+function avatar(m){if(m&&m.photo_url)return m.photo_url;const ch=esc((m&&(m.full_name||m.captain_name)||'?')[0]);return 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#1642f6"/><text x="32" y="43" font-size="30" text-anchor="middle" fill="#ccff00" font-family="sans-serif">${ch}</text></svg>`)}
+function toast(m,ok=true){const e=$('toast');e.textContent=m;e.className='fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-full text-sm font-bold shadow-xl text-white max-w-[90vw] text-center '+(ok?'bg-emerald-600':'bg-rose-600');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hidden'),5000)}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.value=.2;o.start();o.stop(c.currentTime+.3)}catch(_){}}
+
+// ---------- auth ----------
+function af(url,opts={}){const t=sessionStorage.getItem('foam_admin');return fetch(url,{...opts,headers:{...(opts.headers||{}),...(t?{Authorization:'Basic '+t}:{})}})}
+async function doLogin(){
+  const err=$('loginErr'),btn=$('loginBtn');err.classList.add('hidden');btn.disabled=true;btn.textContent='جاري التحقق...';
+  let cred;try{cred=btoa('admin:'+$('loginPass').value)}catch(_){err.textContent='استخدم أحرفاً إنجليزية وأرقاماً فقط';err.classList.remove('hidden');btn.disabled=false;btn.textContent='دخول لوحة التحكم';return}
+  try{
+    const r=await fetch(API+'/bookings',{headers:{Authorization:'Basic '+cred}});
+    if(r.status===401)throw new Error('كلمة المرور غير صحيحة');
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||'تعذر الاتصال بالسيرفر ('+r.status+')')}
+    sessionStorage.setItem('foam_admin',cred);$('loginOverlay').classList.add('hidden');loadAll();
+  }catch(e){err.textContent=e.message;err.classList.remove('hidden')}
+  btn.disabled=false;btn.textContent='دخول لوحة التحكم';
+}
+function logout(){sessionStorage.removeItem('foam_admin');known=null;$('loginPass').value='';$('loginOverlay').classList.remove('hidden')}
+window.addEventListener('DOMContentLoaded',()=>{if(sessionStorage.getItem('foam_admin')){$('loginOverlay').classList.add('hidden');loadAll()}setView('bookings')});
+setInterval(()=>{if(!sessionStorage.getItem('foam_admin'))return;if(!$('modal').classList.contains('hidden')||!$('staffModal').classList.contains('hidden'))return;loadAll()},10000);
+setInterval(()=>{if(sessionStorage.getItem('foam_admin')&&(view==='tracking'||view==='captains'||openCap))loadTracking()},8000);
+
+// ---------- data ----------
+async function loadAll(){
+  try{
+    const r=await af(API+'/bookings');
+    if(r.status===401){logout();return}
+    if(!r.ok)throw 0;
+    const fresh=await r.json();detectChanges(fresh);bookings=fresh;
+    const s=await af(API+'/staff');if(s.ok)staff=await s.json();
+    af(API+'/settings').then(x=>x.ok?x.json():{}).then(x=>bank=x||{});
+    await loadTracking();
+    $('srvBadge').className='bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-2 rounded-full text-xs flex items-center gap-2';$('srvText').textContent='السيرفر متصل';
+    applyFilter();
+  }catch(e){$('srvBadge').className='bg-rose-50 text-rose-600 border border-rose-200 px-3 py-2 rounded-full text-xs flex items-center gap-2';$('srvText').textContent='تعذر الاتصال بالسيرفر'}
+}
+function detectChanges(list){
+  if(known){const msgs=[];list.forEach(b=>{const o=known[b.id];if(o===undefined)msgs.push(`🆕 طلب جديد ${b.id} من ${b.client_name||'عميل'}`);else if(o!==b.status)msgs.push(`🔔 ${b.captain_name||'السائق'}: ${stLabel(b.status)} — ${b.id}`)});
+    if(msgs.length){toast(msgs[0]+(msgs.length>1?` (+${msgs.length-1})`:''));beep()}}
+  known={};list.forEach(b=>known[b.id]=b.status);
+}
+function applyFilter(){
+  const today=$('timeFilter').value==='today',t=ymd(new Date());
+  shown=today?bookings.filter(b=>ymd(b.created_at)===t):[...bookings];
+  $('tableTitle').textContent=today?'جدول الطلبات (اليوم)':'جدول جميع الطلبات';$('kLblOrders').textContent=today?'طلبات اليوم':'إجمالي الطلبات';
+  const live=shown.filter(b=>b.status!=='cancelled'),rev=live.reduce((a,b)=>a+b.total,0);
+  $('kRevenue').textContent=money(rev);$('kOrders').textContent=shown.length;$('kClients').textContent=new Set(shown.map(b=>b.client_phone)).size;$('kAvg').textContent=money(live.length?rev/live.length:0);
+  const p=bookings.filter(b=>b.status==='pending').length;$('navPending').textContent=p;$('navPending').classList.toggle('hidden',!p);
+  renderTable();renderClients();if(view==='captains')renderCaptains();
+}
+
+// ---------- views ----------
+function setView(v){
+  view=v;document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  ['bookings','clients','captains','tracking','settings'].forEach(x=>$('view-'+x).classList.toggle('hidden',x!==v));
+  $('filterBox').classList.toggle('hidden',!['bookings','clients'].includes(v));$('addCaptainBtn').classList.toggle('hidden',v!=='captains');
+  const T={bookings:['الطلبات','تابع الطلبات، عيّن السائق، وغيّر الحالة والدفع من مكان واحد.'],clients:['العملاء','العملاء وعدد طلباتهم وإجمالي إنفاقهم.'],captains:['السائقون','أنشئ حسابات السائقين ليدخلوا من صفحة /driver.html ويحدّثوا حالة الطلبات.'],tracking:['تتبع السائقين','أين السائقون الآن؟ تتحدث المواقع طالما صفحة السائق مفتوحة.'],settings:['بيانات الدفع','أضف الآيبان مرة واحدة ليُرسل مع كل فاتورة واتساب.']};
+  $('pageTitle').textContent=T[v][0];$('pageSub').textContent=T[v][1];
+  if(v==='captains')renderCaptains();if(v==='settings')loadSettingsForm();if(v==='tracking'){initMap();loadTracking()}
+}
+function renderTable(){
+  const q=($('searchInput').value||'').toLowerCase().trim();
+  const list=q?shown.filter(b=>[b.client_name,b.client_phone,b.id,b.package_title].some(x=>String(x||'').toLowerCase().includes(q))):shown;
+  $('tbody').innerHTML=list.length?list.map(b=>`
+   <tr class="hover:bg-slate-50">
+    <td class="p-3.5 font-bold text-brand font-mono">${esc(b.id)}</td>
+    <td class="p-3.5"><div class="font-bold">${esc(b.client_name||'عميل')}</div><div class="text-[10px] text-slate-400" dir="ltr">${esc(b.client_phone||'-')}</div></td>
+    <td class="p-3.5"><div class="font-medium">${esc(b.package_title)}</div><div class="text-[10px] text-slate-400">${esc(b.car_label)}${b.addons.length?' + '+b.addons.length+' إضافات':''}</div></td>
+    <td class="p-3.5 text-slate-500">${esc(SLOT[b.time_slot]||b.time_slot||'-')}<div class="text-[10px] text-slate-400">${esc(ymd(b.created_at))}</div></td>
+    <td class="p-3.5 text-slate-600 max-w-[170px] truncate" title="${esc((b.district||'')+' - '+(b.street||''))}">${esc(b.city)}، ${esc(b.district)}</td>
+    <td class="p-3.5 font-bold text-emerald-600">${money(b.total)}</td>
+    <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${stCls(b.status)}">${esc(stLabel(b.status))}</span>
+      <div class="text-[10px] mt-1 ${b.payment_status==='paid'?'text-emerald-600':'text-slate-400'}">${esc(PAYL[b.payment_status]||'')} · ${b.captain_name?esc(b.captain_name):'بلا سائق'}</div></td>
+    <td class="p-3.5 text-center"><button onclick="openModal('${esc(b.id)}')" class="bg-brand hover:opacity-90 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full"><i class="fa-solid fa-gear ml-1"></i> إجراء</button></td>
+   </tr>`).join(''):'<tr><td colspan="8" class="text-center p-8 text-slate-400 font-semibold">لا توجد طلبات لهذه الفترة</td></tr>';
+}
+function renderClients(){
+  const m={};shown.forEach(b=>{if(!b.client_phone)return;const c=m[b.client_phone]||(m[b.client_phone]={name:b.client_name||'عميل',phone:b.client_phone,n:0,sum:0});c.n++;if(b.customer_id)c.cid=b.customer_id;if(b.status!=='cancelled')c.sum+=b.total});
+  const l=Object.values(m);
+  $('clientsGrid').innerHTML=l.length?l.map(c=>`<div class="bg-white border border-slate-100 rounded-3xl p-5 flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-brand/10 text-brand grid place-items-center font-extrabold text-lg">${esc(c.name[0])}</div><div class="flex-1 min-w-0"><h4 class="text-sm font-bold truncate">${esc(c.name)}</h4><p class="text-[11px] text-slate-400" dir="ltr" style="text-align:right">${esc(c.phone)}</p><div class="mt-2 flex gap-2 text-[10px]"><span class="bg-slate-100 px-2 py-0.5 rounded-md font-bold">طلبات: ${c.n}</span><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-bold">${money(c.sum)}</span></div>${c.cid?`<button onclick="resetCustPw('${c.cid}')" class="mt-2 text-[10px] font-bold text-brand underline">🔑 تعيين رقم سري جديد</button>`:'<div class="mt-1 text-[10px] text-slate-400">بدون حساب</div>'}</div></div>`).join(''):'<p class="text-sm text-slate-400 p-8 text-center sm:col-span-2 xl:col-span-3">لا يوجد عملاء لهذه الفترة.</p>';
+}
+
+// ---------- captains ----------
+const caps=()=>staff.filter(s=>s.role==='driver');
+const trackOf=id=>tracking.find(t=>String(t.user_id)===String(id));
+const activeN=id=>bookings.filter(b=>String(b.captain_id)===String(id)&&!['completed','cancelled'].includes(b.status)).length;
+function renderCaptains(){
+  const l=caps();
+  $('captainsGrid').innerHTML=l.length?l.map(m=>{const t=trackOf(m.id),st=t?cState(t):{label:'لا يوجد موقع',cls:'text-slate-400'};return `
+   <div class="bg-white border border-slate-100 rounded-3xl p-5 space-y-3">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="openCapModal('${m.id}')">
+      <img src="${esc(avatar(m))}" class="w-16 h-16 rounded-2xl object-cover bg-slate-100" alt="">
+      <div class="flex-1 min-w-0"><h4 class="text-sm font-bold truncate">${esc(m.full_name)}</h4><p class="text-xs text-slate-400" dir="ltr" style="text-align:right">${esc(m.phone)}</p>
+        <p class="text-[11px] font-bold mt-1 ${st.cls}">● ${st.label} · ${activeN(m.id)} طلب نشط</p></div>
+      <button onclick="event.stopPropagation();delStaff('${m.id}')" class="text-rose-500 hover:text-rose-700 p-2" title="حذف"><i class="fa-solid fa-trash"></i></button>
+    </div>
+    <button onclick="changePw('${m.id}')" class="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl py-2 text-xs font-bold"><i class="fa-solid fa-key ml-1"></i> تغيير كلمة المرور</button>
+   </div>`}).join(''):'<p class="text-sm text-slate-400 p-8 text-center sm:col-span-2 xl:col-span-3">لا يوجد سائقين بعد. اضغط «إضافة سائق».</p>';
+}
+function genPass(){const c='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789',a=new Uint32Array(10);crypto.getRandomValues(a);return [...a].map(n=>c[n%c.length]).join('')}
+function openStaffModal(){$('sName').value='';$('sPhone').value='';$('sPass').value=genPass();photo=null;$('photoPreview').src=avatar({full_name:'؟'});$('staffModal').classList.remove('hidden');$('staffModal').classList.add('flex')}
+function closeStaffModal(){$('staffModal').classList.add('hidden');$('staffModal').classList.remove('flex')}
+function pickPhoto(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const i=new Image();i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',.8);$('photoPreview').src=photo};i.src=ev.target.result};r.readAsDataURL(f)}
+async function saveStaff(){
+  const name=$('sName').value.trim(),phone=$('sPhone').value.trim(),pw=$('sPass').value.trim();
+  if(!name||!phone||!pw)return toast('يرجى تعبئة جميع الحقول',false);if(pw.length<8)return toast('كلمة المرور 8 أحرف على الأقل',false);
+  const b=$('saveStaffBtn');b.disabled=true;
+  try{const r=await af(API+'/staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name:name,phone,password:pw,photo})});
+    if(r.ok){closeStaffModal();prompt('✅ تم الحفظ. انسخ كلمة المرور وسلّمها للسائق (لن تظهر مرة أخرى):',pw);loadAll()}
+    else if(r.status===401)logout();else{const e=await r.json().catch(()=>({}));toast(e.error||'تعذر الحفظ',false)}}
+  catch(_){toast('خطأ في الاتصال',false)}
+  b.disabled=false;
+}
+async function delStaff(id){if(!confirm('حذف هذا السائق؟ ستبقى طلباته بلا سائق.'))return;const r=await af(API+'/staff/'+id,{method:'DELETE'});r.ok?(toast('تم الحذف'),loadAll()):toast('تعذر الحذف',false)}
+async function changePw(id){
+  const pw=prompt('كلمة المرور الجديدة (8 أحرف على الأقل):',genPass());if(pw===null)return;if(pw.trim().length<8)return toast('8 أحرف على الأقل',false);
+  const r=await af(API+'/staff/'+id+'/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw.trim()})});
+  r.ok?toast('✅ تم تغيير كلمة المرور — سلّمها للسائق: '+pw.trim()):toast('تعذر التغيير',false);
+}
+
+// ---------- order modal ----------
+const hav=(a,b,c,d)=>{const R=6371,r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+const fmtKm=k=>k<1?Math.round(k*1000)+' م':k.toFixed(1)+' كم';
+function openModal(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;curId=id;pay=b.payment_status||'unpaid';$('modalSub').textContent='رقم الطلب: '+b.id;
+  const list=caps().map(c=>{const t=trackOf(c.id),km=(b.lat!=null&&isOn(t))?hav(b.lat,b.lng,t.lat,t.lng):null;return{...c,km,busy:activeN(c.id)}}).sort((x,y)=>(x.km==null)-(y.km==null)||(x.km??0)-(y.km??0)||x.busy-y.busy);
+  const near=list.find(c=>c.km!=null);
+  const map=b.lat!=null?`https://www.google.com/maps?q=${b.lat},${b.lng}`:'';
+  $('modalBody').innerHTML=`
+   <div class="space-y-2.5 text-xs bg-slate-50 p-4 rounded-2xl">
+    <div><b>العميل:</b> ${esc(b.client_name)} (<span dir="ltr">${esc(b.client_phone)}</span>)</div>
+    <div><b>الخدمة:</b> ${esc(b.package_title)} — ${esc(b.car_label)}</div>
+    ${b.addons.length?`<div><b>الإضافات:</b> ${esc(b.addons.join('، '))}</div>`:''}
+    <div><b>الموعد:</b> ${esc(SLOT[b.time_slot]||b.time_slot)}</div>
+    <div><b>العنوان:</b> ${esc(b.city)}، ${esc(b.district)}، ${esc(b.street)} ${map?`<a href="${map}" target="_blank" rel="noopener" class="text-brand underline mr-1">الخريطة</a>`:''}</div>
+    ${b.notes?`<div><b>ملاحظات:</b> ${esc(b.notes)}</div>`:''}
+    <div><b>المبلغ:</b> ${money(b.total)} <span class="text-slate-400">(شامل الضريبة${b.coupon?' · كوبون '+esc(b.coupon):''}) · الدفع: ${esc(b.pay_method||'-')}</span></div>
+   </div>
+   <label class="block text-xs font-bold">حالة الطلب<select id="mStatus" class="field-light mt-1 font-bold">${STATUSES.map(s=>`<option value="${s[0]}" ${b.status===s[0]?'selected':''}>${s[1]}</option>`).join('')}</select></label>
+   <div class="text-xs font-bold">تعيين سائق
+    ${near?`<div class="mt-1 mb-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 flex items-center gap-2"><i class="fa-solid fa-location-crosshairs"></i><span class="flex-1">الأقرب للعميل: <b>${esc(near.full_name)}</b> — ${fmtKm(near.km)}${near.busy?` (لديه ${near.busy} طلب نشط)`:''}</span><button type="button" onclick="$('mCap').value='${near.id}'" class="bg-emerald-600 text-white rounded-full px-3 py-1 text-[11px]">اختيار</button></div>`
+      :`<div class="mt-1 mb-2 text-[11px] font-normal text-slate-400">${b.lat!=null?'لا يوجد سائق متصل حالياً لحساب الأقرب.':'لا يمكن حساب الأقرب: العميل لم يشارك موقعه.'}</div>`}
+    <select id="mCap" class="field-light mt-1"><option value="">-- اختر سائق --</option>${list.map(c=>`<option value="${c.id}" ${String(b.captain_id)===String(c.id)?'selected':''}>${esc(c.full_name)}${c.km!=null?' — '+fmtKm(c.km):' — لا يوجد موقع'}${c.busy?' · '+c.busy+' نشط':''}</option>`).join('')}</select>
+   </div>
+   <div><span class="block text-xs font-bold mb-1">حالة الدفع</span><div class="flex gap-2">${Object.entries(PAYL).map(([k,l])=>`<button type="button" data-pay="${k}" onclick="setPay('${k}')" class="pay-btn flex-1 py-2 rounded-xl text-xs font-extrabold border transition ${pay===k?'bg-brand text-white border-brand':'bg-white text-slate-700 border-slate-200'}">${l}</button>`).join('')}</div></div>
+   <div class="pt-3 flex gap-2 border-t border-slate-100">
+    <button type="button" onclick="sendInvoice('${esc(b.id)}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs"><i class="fa-brands fa-whatsapp text-sm ml-1"></i> إرسال الفاتورة واتساب</button>
+    <button id="saveBtn" type="button" onclick="saveBooking()" class="flex-1 bg-brand hover:opacity-90 text-white font-extrabold py-3 rounded-xl text-xs">حفظ التعديلات</button>
+   </div>`;
+  $('modal').classList.remove('hidden');$('modal').classList.add('flex');
+}
+function setPay(s){pay=s;document.querySelectorAll('.pay-btn').forEach(b=>{const on=b.dataset.pay===s;b.classList.toggle('bg-brand',on);b.classList.toggle('text-white',on);b.classList.toggle('border-brand',on);b.classList.toggle('bg-white',!on);b.classList.toggle('text-slate-700',!on);b.classList.toggle('border-slate-200',!on)})}
+function closeModal(){$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
+async function saveBooking(){
+  const btn=$('saveBtn');btn.disabled=true;
+  try{const r=await af(API+'/bookings/'+encodeURIComponent(curId),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:$('mStatus').value,captain_id:$('mCap').value||null,payment_status:pay})});
+    if(r.ok){toast('✅ تم تحديث الطلب');closeModal();loadAll()}else if(r.status===401)logout();else{const e=await r.json().catch(()=>({}));toast(e.error||'تعذر التحديث',false)}}
+  catch(_){toast('خطأ في الاتصال',false)}
+  btn.disabled=false;
+}
+function sendInvoice(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  let p=String(b.client_phone||'').replace(/\D/g,'');if(p.startsWith('00'))p=p.slice(2);if(p.startsWith('0'))p='966'+p.slice(1);if(!p)return toast('لا يوجد رقم جوال',false);
+  const L=[`السلام عليكم ${b.client_name||''} 🚗`,`فاتورة طلبك ${b.id}`,'--------------------------------',`الخدمة: ${b.package_title}`,`السيارة: ${b.car_label}`];
+  if(b.addons.length)L.push(`الإضافات: ${b.addons.join('، ')}`);
+  if(b.discount>0)L.push(`الخصم: -${money(b.discount)}`);
+  L.push(`الضريبة 15%: ${money(b.vat)}`,`الإجمالي: ${money(b.total)}`,`حالة الدفع: ${PAYL[pay]||''}`);
+  if(pay!=='paid'&&(bank.iban||bank.bank_name)){L.push('--------------------------------','🏛️ بيانات التحويل:');if(bank.bank_name)L.push('البنك: '+bank.bank_name);if(bank.account_holder)L.push('اسم الحساب: '+bank.account_holder);if(bank.iban)L.push('IBAN: '+bank.iban)}
+  if(bank.note)L.push('--------------------------------','📌 '+bank.note);
+  window.open(`https://wa.me/${p}?text=${encodeURIComponent(L.join('\n'))}`,'_blank');
+}
+
+async function resetCustPw(id){
+  const pw=prompt('الرقم السري الجديد للعميل (6 خانات على الأقل):',String(Math.floor(100000+Math.random()*900000)));if(pw===null)return;if(pw.trim().length<6)return toast('6 خانات على الأقل',false);
+  const r=await af(API+'/customers/'+id+'/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw.trim()})});
+  r.ok?toast('✅ تم التغيير — أرسل للعميل الرقم: '+pw.trim()):toast('تعذر التغيير',false);
+}
+
+// ---------- settings ----------
+async function loadSettingsForm(){const r=await af(API+'/settings');if(r.status===401)return logout();if(r.ok){bank=await r.json()||{};$('setBank').value=bank.bank_name||'';$('setHolder').value=bank.account_holder||'';$('setIban').value=bank.iban||'';$('setNote').value=bank.note||'';renderPreview()}}
+function renderPreview(){$('preview').textContent=`🧾 *فاتورة طلب غسيل سيارة*\n--------------------------------\n🏛️ البنك: ${$('setBank').value||'اسم البنك'}\n👤 اسم الحساب: ${$('setHolder').value||'اسم صاحب الحساب'}\n💳 IBAN: ${$('setIban').value||'SA00 0000 0000 0000 0000 0000'}\n--------------------------------\n${$('setNote').value?'📌 '+$('setNote').value:''}`}
+async function saveSettings(){
+  const body={bank_name:$('setBank').value.trim(),account_holder:$('setHolder').value.trim(),iban:$('setIban').value.trim(),note:$('setNote').value.trim()};
+  const r=await af(API+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){bank=body;toast('✅ تم حفظ بيانات الدفع')}else if(r.status===401)logout();else toast('تعذر الحفظ',false);
+}
+
+// ---------- tracking ----------
+let map=null,markers={},layer=null,fitted=false,tFilter='all',tSearchTxt='',capMap=null;
+const FRESH=300;
+const hasPos=t=>t&&t.lat!=null&&t.lng!=null,isOn=t=>hasPos(t)&&t.age_seconds!=null&&t.age_seconds<=FRESH;
+const tripOf=id=>bookings.find(b=>String(b.captain_id)===String(id)&&b.status==='on_the_way');
+function cState(t){if(!isOn(t))return{key:'off',label:hasPos(t)?'غير متصل':'لا يوجد موقع',color:'#94a3b8',cls:'text-slate-400'};if(tripOf(t.user_id))return{key:'trip',label:'في الطريق',color:'#1642f6',cls:'text-blue-600'};return{key:'on',label:'متصل',color:'#10b981',cls:'text-emerald-600'}}
+const ago=s=>s==null?'':s<60?'قبل '+s+' ثانية':s<3600?'قبل '+Math.round(s/60)+' دقيقة':'قبل '+Math.round(s/3600)+' ساعة';
+function initMap(){if(map||typeof L==='undefined'){if(map)setTimeout(()=>map.invalidateSize(),50);return}map=L.map('trackMap').setView([21.5433,39.1728],11);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map)}
+async function loadTracking(){
+  try{const r=await af(API+'/tracking');if(r.status===401)return logout();if(r.ok)tracking=await r.json()}catch(_){return}
+  const on=tracking.filter(isOn).length;$('navTracking').textContent=on;$('navTracking').classList.toggle('hidden',!on);
+  if(view==='tracking')renderTracking();if(view==='captains')renderCaptains();if(openCap&&!$('capModal').classList.contains('hidden'))renderCapModal();
+}
+function setTF(f){tFilter=f;renderTracking()}
+function renderTracking(){
+  initMap();if(!map){$('tList').innerHTML='<div class="text-sm text-slate-400 p-6 text-center">تعذر تحميل الخريطة (تحقق من الإنترنت).</div>';return}
+  if(!layer)layer=L.layerGroup().addTo(map);layer.clearLayers();
+  const total=tracking.length,tripN=tracking.filter(t=>isOn(t)&&tripOf(t.user_id)).length,onN=tracking.filter(isOn).length;
+  $('tOnline').textContent=onN;$('tTrip').textContent=tripN;$('tOff').textContent=total-onN;$('tUnassigned').textContent=bookings.filter(b=>!b.captain_id&&!['completed','cancelled'].includes(b.status)).length;
+  const cnt={all:total,on:tracking.filter(t=>cState(t).key==='on').length,trip:tripN,off:total-onN};
+  $('tChips').innerHTML=[['all','الكل'],['on','متصل'],['trip','في الطريق'],['off','غير متصل']].map(([k,l])=>`<button onclick="setTF('${k}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold border ${tFilter===k?'bg-brand text-white border-brand':'bg-white text-slate-600 border-slate-200'}">${l} <span class="opacity-70">${cnt[k]}</span></button>`).join('');
+  const sh=tracking.filter(t=>(tFilter==='all'||cState(t).key===tFilter)&&(!tSearchTxt||String(t.captain_name||'').toLowerCase().includes(tSearchTxt)));
+  const seen=new Set();
+  sh.filter(hasPos).forEach(t=>{
+    seen.add(String(t.user_id));const st=cState(t),m=staff.find(s=>String(s.id)===String(t.user_id)),trip=tripOf(t.user_id),dest=trip&&trip.lat!=null?trip:null;
+    const km=dest?hav(t.lat,t.lng,dest.lat,dest.lng):null;
+    const pop=`<div style="font-family:Tajawal;direction:rtl;min-width:160px;line-height:1.7"><b>${esc(t.captain_name)}</b><br><span style="color:${st.color};font-weight:700">● ${st.label}</span> · ${ago(t.age_seconds)}<br>${trip?`العميل: <b>${esc(trip.client_name)}</b><br>${km!=null?'يبعد: <b>'+fmtKm(km)+'</b><br>':''}`:''}<a href="#" onclick="openCapModal('${t.user_id}');return false" style="color:#1642f6;font-weight:800">التفاصيل ←</a></div>`;
+    const html=`<div class="trk-pin">${st.key==='off'?'':`<span class="trk-pulse" style="background:${st.color}"></span>`}<div class="trk-avatar" style="border-color:${st.color};background:${st.color}"><img src="${esc(avatar(m||{full_name:t.captain_name}))}" style="width:100%;height:100%;object-fit:cover"></div><div class="trk-name" style="background:${st.color}">${esc(String(t.captain_name||'').split(' ')[0])}</div></div>`;
+    const icon=L.divIcon({className:'trk-icon',html,iconSize:[44,62],iconAnchor:[22,22]}),k=String(t.user_id);
+    if(markers[k])markers[k].setLatLng([t.lat,t.lng]).setIcon(icon).setPopupContent(pop);else markers[k]=L.marker([t.lat,t.lng],{icon}).addTo(map).bindPopup(pop);
+    if(dest){L.polyline([[t.lat,t.lng],[dest.lat,dest.lng]],{color:'#1642f6',weight:3,opacity:.7,dashArray:'8 8'}).addTo(layer);L.marker([dest.lat,dest.lng],{icon:L.divIcon({className:'trk-icon',html:'<div class="trk-dest"><i class="fa-solid fa-house"></i></div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(layer)}
+  });
+  Object.keys(markers).forEach(k=>{if(!seen.has(k)){map.removeLayer(markers[k]);delete markers[k]}});
+  if(!fitted&&seen.size){fitAll();fitted=true}if(!tracking.some(hasPos))fitted=false;
+  const ord={trip:0,on:1,off:2};
+  $('tList').innerHTML=sh.length?sh.slice().sort((a,b)=>ord[cState(a).key]-ord[cState(b).key]).map(t=>{
+    const st=cState(t),m=staff.find(s=>String(s.id)===String(t.user_id)),trip=tripOf(t.user_id);
+    return `<div class="bg-white border border-slate-100 rounded-2xl p-3.5 shadow-sm" style="border-right:4px solid ${st.color}"><div class="flex items-center gap-3 cursor-pointer" onclick="${hasPos(t)?`focusCap('${t.user_id}')`:`openCapModal('${t.user_id}')`}"><img src="${esc(avatar(m||{full_name:t.captain_name}))}" class="w-11 h-11 rounded-xl object-cover bg-slate-100"><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate">${esc(t.captain_name)}</div><div class="text-[11px] font-bold ${st.cls}">● ${st.label}${hasPos(t)?` <span class="font-normal text-slate-400">· ${ago(t.age_seconds)}</span>`:''}</div></div><button onclick="event.stopPropagation();openCapModal('${t.user_id}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500"><i class="fa-solid fa-circle-info"></i></button></div>${trip?`<div class="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-600"><i class="fa-regular fa-user ml-1 text-slate-400"></i>${esc(trip.client_name)} — ${esc(trip.district)}</div>`:`<div class="mt-2 text-[11px] text-slate-400">${activeN(t.user_id)?activeN(t.user_id)+' طلب نشط':'متاح'}</div>`}</div>`}).join('')
+    :`<div class="bg-white border border-slate-100 rounded-2xl p-8 text-center text-sm text-slate-400">${total?'لا يوجد سائقين بهذا التصنيف.':'لا يوجد سائقين بعد.'}</div>`;
+}
+function fitAll(){const p=tracking.filter(hasPos).map(t=>[t.lat,t.lng]);if(map&&p.length)map.fitBounds(L.latLngBounds(p).pad(.3),{maxZoom:15})}
+function focusCap(id){const m=markers[String(id)];if(m&&map){map.setView(m.getLatLng(),16);m.openPopup()}}
+
+// ---------- captain modal ----------
+function openCapModal(id){openCap=String(id);$('capModal').classList.remove('hidden');$('capModal').classList.add('flex');renderCapModal(true)}
+function closeCapModal(){openCap=null;$('capModal').classList.add('hidden');$('capModal').classList.remove('flex');if(capMap){capMap.remove();capMap=null}}
+function renderCapModal(fresh){
+  const m=staff.find(s=>String(s.id)===openCap);if(!m)return;const t=trackOf(openCap),st=t?cState(t):{label:'لا يوجد موقع',cls:'text-slate-400',color:'#94a3b8'};
+  const mine=bookings.filter(b=>String(b.captain_id)===openCap),act=mine.filter(b=>!['completed','cancelled'].includes(b.status)),done=mine.filter(b=>b.status==='completed').length;
+  const row=b=>`<div class="bg-white border border-slate-100 rounded-2xl p-3.5 text-xs space-y-1.5 shadow-sm"><div class="flex items-center justify-between gap-2"><b class="text-sm truncate">${esc(b.client_name)}</b><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${stCls(b.status)}">${esc(stLabel(b.status))}</span></div><div class="text-slate-500">${esc(b.package_title)} · ${esc(b.car_label)}</div><div class="text-slate-500"><i class="fa-solid fa-location-dot ml-1 text-slate-400"></i>${esc(b.city)}، ${esc(b.district)}، ${esc(b.street)}</div></div>`;
+  const sc=$('capBody').scrollTop;
+  $('capBody').innerHTML=`
+   <div class="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-slate-100"><img src="${esc(avatar(m))}" class="w-16 h-16 rounded-2xl object-cover bg-slate-100"><div class="flex-1 min-w-0"><h3 class="font-extrabold text-lg truncate">${esc(m.full_name)}</h3><p class="text-xs text-slate-500" dir="ltr" style="text-align:right">${esc(m.phone)}</p><span class="inline-flex items-center gap-1.5 mt-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-50 border border-slate-100 ${st.cls}"><span class="w-2 h-2 rounded-full" style="background:${st.color}"></span>${st.label}${t&&hasPos(t)?' · '+ago(t.age_seconds):''}</span></div><a href="tel:${esc(m.phone)}" class="bg-emerald-600 text-white rounded-2xl w-11 h-11 grid place-items-center"><i class="fa-solid fa-phone"></i></a></div>
+   <div class="grid grid-cols-3 gap-2 text-center"><div class="bg-white rounded-2xl p-3 border border-slate-100"><div class="text-lg font-extrabold text-brand">${act.length}</div><div class="text-[10px] text-slate-500 font-bold">نشطة</div></div><div class="bg-white rounded-2xl p-3 border border-slate-100"><div class="text-lg font-extrabold text-emerald-600">${done}</div><div class="text-[10px] text-slate-500 font-bold">مكتملة</div></div><div class="bg-white rounded-2xl p-3 border border-slate-100"><div class="text-lg font-extrabold">${mine.length}</div><div class="text-[10px] text-slate-500 font-bold">الإجمالي</div></div></div>
+   <div class="bg-white rounded-2xl p-4 border border-slate-100"><h4 class="text-xs font-extrabold mb-3"><i class="fa-solid fa-location-crosshairs text-brand ml-1"></i> الموقع الحالي</h4>${t&&hasPos(t)?'<div style="position:relative;z-index:0;isolation:isolate"><div id="capMap" class="w-full rounded-xl overflow-hidden border border-slate-200" style="height:210px"></div></div>':'<div class="text-xs text-slate-400 bg-slate-50 rounded-xl p-5 text-center">لم يشارك السائق موقعه بعد.<br>يظهر عندما يفتح صفحة السائق ويسمح بالموقع.</div>'}</div>
+   <div><h4 class="text-xs font-extrabold mb-2.5"><i class="fa-solid fa-list-check text-brand ml-1"></i> الطلبات الموكلة</h4><div class="space-y-2.5">${act.length?act.map(row).join(''):'<div class="text-xs text-slate-400 bg-white border border-slate-100 rounded-2xl p-5 text-center">لا توجد طلبات نشطة.</div>'}</div></div>`;
+  $('capBody').scrollTop=sc;
+  if(t&&hasPos(t)&&typeof L!=='undefined'){let c=[t.lat,t.lng],z=15;if(capMap){if(!fresh){c=capMap.getCenter();z=capMap.getZoom()}capMap.remove();capMap=null}
+    capMap=L.map('capMap').setView(c,z);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(capMap);L.marker([t.lat,t.lng]).addTo(capMap);setTimeout(()=>capMap&&capMap.invalidateSize(),60)}
+  else if(capMap){capMap.remove();capMap=null}
+}
+</script>
+</body>
+</html>

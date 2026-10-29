@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="/manifest-driver.webmanifest">
+<meta name="theme-color" content="#0b1233">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FOAM سائق">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/driver-192.png">
+<title>FOAM | تطبيق السائق</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>body{font-family:'Cairo',sans-serif;background:#0b1233;color:#fff;padding-top:max(1rem,env(safe-area-inset-top));padding-bottom:max(1rem,env(safe-area-inset-bottom))}</style>
+</head>
+<body class="min-h-screen p-4">
+<div class="max-w-md mx-auto space-y-4">
+  <div class="text-center pt-4"><div class="text-3xl font-black text-[#ccff00]">FOAM</div><div class="text-sm text-slate-400">تطبيق السائق</div></div>
+
+  <div id="installBox" class="hidden bg-[#ccff00] text-[#0b1233] rounded-2xl p-4 text-sm space-y-2">
+    <div class="font-black">📲 ثبّت تطبيق السائق على جوالك</div>
+    <button id="installBtn" onclick="installApp()" class="hidden w-full bg-[#0b1233] text-white font-black py-2.5 rounded-xl">تثبيت التطبيق</button>
+    <div id="iosHint" class="hidden text-xs font-bold">على الآيفون: افتح الصفحة من Safari، اضغط زر المشاركة ⬆️ ثم «إضافة إلى الشاشة الرئيسية».</div>
+  </div>
+
+  <div id="loginBox" class="bg-white/10 rounded-3xl p-5 space-y-3">
+    <input id="ph" dir="ltr" inputmode="tel" placeholder="رقم الجوال" class="w-full rounded-xl px-4 py-3 text-slate-900 text-right">
+    <input id="pw" type="password" dir="ltr" placeholder="كلمة المرور" class="w-full rounded-xl px-4 py-3 text-slate-900 text-right">
+    <div id="err" class="hidden text-rose-300 text-sm text-center"></div>
+    <button onclick="login()" class="w-full bg-[#1642f6] font-black py-3 rounded-xl">دخول</button>
+  </div>
+
+  <div id="app" class="hidden space-y-4">
+    <div class="flex items-center justify-between bg-white/10 rounded-2xl p-4">
+      <div><div id="nm" class="font-black"></div><div id="gps" class="text-xs text-slate-400">الموقع: غير مفعّل</div></div>
+      <button onclick="logout()" class="text-xs text-rose-300">خروج</button>
+    </div>
+    <div id="jobs" class="space-y-3"></div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.getItem('cap_token'),watchId=null,lastSent=0;
+const NEXT={assigned:['on_the_way','🚗 انطلقت للعميل'],on_the_way:['arrived','📍 وصلت لموقع العميل'],arrived:['in_progress','🧼 بدأت الغسيل'],in_progress:['completed','✅ اكتمل الطلب']};
+const LBL={assigned:'تم تعيينك',on_the_way:'في الطريق',arrived:'وصلت',in_progress:'جاري الغسيل'};
+const api=(p,o={})=>fetch('/api/staff'+p,{...o,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}});
+
+async function login(){
+  try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(_){}
+  $('err').classList.add('hidden');
+  const r=await fetch('/api/staff/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:$('ph').value,password:$('pw').value})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){$('err').textContent=d.error||'تعذر الدخول';$('err').classList.remove('hidden');return}
+  token=d.token;localStorage.setItem('cap_token',token);localStorage.setItem('cap_name',d.name);start();
+}
+function logout(){localStorage.removeItem('cap_token');localStorage.removeItem('cap_name');token=null;if(watchId!=null)navigator.geolocation.clearWatch(watchId);location.reload()}
+function start(){
+  $('loginBox').classList.add('hidden');$('app').classList.remove('hidden');$('nm').textContent='مرحباً '+(localStorage.getItem('cap_name')||'');
+  keepAwake();loadJobs();setInterval(loadJobs,10000);
+  if(navigator.geolocation)watchId=navigator.geolocation.watchPosition(p=>{
+    $('gps').textContent='الموقع: مفعّل ✅';
+    if(Date.now()-lastSent<8000)return;lastSent=Date.now();
+    api('/location',{method:'POST',body:JSON.stringify({lat:p.coords.latitude,lng:p.coords.longitude})});
+  },()=>{$('gps').textContent='الموقع: ❌ اسمح للمتصفح بالموقع'},{enableHighAccuracy:true,maximumAge:5000});
+}
+async function loadJobs(){
+  const r=await api('/jobs');if(r.status===401)return logout();if(!r.ok)return;
+  const l=await r.json();
+  newJobAlert(l);
+  $('jobs').innerHTML=l.length?l.map(b=>{const n=NEXT[b.status];return `
+   <div class="bg-white text-slate-900 rounded-3xl p-4 space-y-2">
+    <div class="flex justify-between text-sm"><b class="font-mono text-[#1642f6]">${esc(b.id)}</b><span class="bg-blue-50 text-[#1642f6] text-xs font-bold px-3 py-1 rounded-full">${esc(LBL[b.status]||b.status)}</span></div>
+    <div class="font-bold">${esc(b.package_title)} — ${esc(b.car_label)}</div>
+    ${b.addons.length?`<div class="text-xs text-slate-500">إضافات: ${esc(b.addons.join('، '))}</div>`:''}
+    <div class="text-sm">👤 ${esc(b.client_name)} · <a href="tel:${esc(b.client_phone)}" class="text-[#1642f6] font-bold" dir="ltr">${esc(b.client_phone)}</a></div>
+    <div class="text-sm text-slate-600">📍 ${esc(b.city)}، ${esc(b.district)}، ${esc(b.street)}</div>
+    ${b.notes?`<div class="text-xs text-slate-500">📝 ${esc(b.notes)}</div>`:''}
+    <div class="text-sm font-bold text-emerald-600">${Number(b.total).toFixed(2)} ر.س · ${b.payment_status==='paid'?'مدفوع':'غير مدفوع'} (${esc(b.pay_method||'-')})</div>
+    <div class="flex gap-2 pt-1">
+      ${b.lat!=null?`<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}" class="flex-1 text-center bg-slate-100 font-bold rounded-xl py-3 text-sm">🧭 الاتجاهات</a>`:''}
+      ${n?`<button onclick="setStatus('${esc(b.id)}','${n[0]}')" class="flex-1 bg-[#1642f6] text-white font-black rounded-xl py-3 text-sm">${n[1]}</button>`:''}
+    </div></div>`}).join(''):'<div class="text-center text-slate-400 py-10">لا توجد طلبات معينة لك حالياً</div>';
+}
+async function setStatus(id,st){const r=await api('/jobs/'+encodeURIComponent(id)+'/status',{method:'PUT',body:JSON.stringify({status:st})});r.ok?loadJobs():alert('تعذر التحديث')}
+// ---------- new-job alert (while the app is open) ----------
+let knownJobs=null;
+function newJobAlert(l){
+  if(knownJobs){const fresh=l.filter(b=>!knownJobs.has(b.id));
+    if(fresh.length){
+      if(navigator.vibrate)navigator.vibrate([300,150,300]);
+      if('Notification' in window&&Notification.permission==='granted'&&navigator.serviceWorker)
+        navigator.serviceWorker.ready.then(r=>r.showNotification('FOAM — طلب جديد 🚗',{body:fresh[0].package_title+' — '+fresh[0].district,icon:'/icons/driver-192.png',tag:fresh[0].id,vibrate:[300,150,300]})).catch(()=>{});
+    }}
+  knownJobs=new Set(l.map(b=>b.id));
+}
+// ---------- PWA: service worker, install, keep screen on ----------
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/driver-sw.js',{scope:'/driver.html'}).catch(()=>{});
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;$('installBox').classList.remove('hidden');$('installBtn').classList.remove('hidden')});
+async function installApp(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$('installBox').classList.add('hidden')}
+window.addEventListener('appinstalled',()=>$('installBox').classList.add('hidden'));
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone){$('installBox').classList.remove('hidden');$('iosHint').classList.remove('hidden')}
+async function keepAwake(){try{if('wakeLock' in navigator)await navigator.wakeLock.request('screen')}catch(_){}}   // GPS keeps reporting while the screen stays on
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&token)keepAwake()});
+if(token)start();
+</script>
+</body>
+</html>

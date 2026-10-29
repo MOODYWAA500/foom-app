@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.spa_relax_sa.twa",
+    "sha256_cert_fingerprints": ["E3:FD:0F:64:8F:ED:01:94:71:D9:24:4A:E3:B8:C7:B3:B5:FF:1A:45:D3:01:C0:AC:A2:62:61:F9:EF:7F:B6:B5"]
+  }
+}]
